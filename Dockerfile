@@ -1,17 +1,23 @@
-# Use the official Rust image
-FROM rust:latest as builder
+# Stage 1: Build
+FROM rust:latest AS builder
 
-# Copy only necessary files (Cargo.toml + src/main.rs)
 WORKDIR /app
 COPY Cargo.toml .
-COPY src/main.rs src/
+# Only copy Cargo.lock if it exists
+COPY Cargo.lock . 
+RUN mkdir -p src && \
+    echo "fn main() {}" > src/main.rs && \
+    cargo build --release
 
-# Build the release binary
-RUN cargo build --release
+COPY src/ src/
+RUN touch src/main.rs && \
+    cargo build --release
 
-# Use a minimal runtime image
-FROM debian:buster-slim
+# Stage 2: Runtime
+FROM debian:bookworm-slim  
+RUN apt-get update && \
+    apt-get install -y ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /app/target/release/stavros_project /usr/local/bin/
-
-# Run the binary
 CMD ["stavros_project"]

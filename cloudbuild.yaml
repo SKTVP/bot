@@ -1,0 +1,20 @@
+steps:
+  # Step 1: Build Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/stavros-bot/rust-app:latest', '.']
+
+  # Step 2: Push to Google Container Registry (GCR)
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/stavros-bot/rust-app:latest']
+
+  # Step 3: Deploy to Cloud Run (Singapore)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    args: [
+      'gcloud', 'run', 'deploy', 'rust-app',
+      '--image=gcr.io/stavros-bot/rust-app:latest',
+      '--platform=managed',
+      '--region=asia-southeast1',
+      '--allow-unauthenticated',
+      '--memory=512Mi',  # Rust apps need ~512MB
+      '--cpu=1'          # Allocate 1 vCPU
+    ]
